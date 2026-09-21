@@ -1,0 +1,28 @@
+.ribbon {
+  overflow: hidden;
+  padding-block: 13px;
+  white-space: nowrap;
+}
+.ribbon--brown { background: var(--brown); color: #fdf3e9; }
+.ribbon--green { background: var(--green); color: #f2f8ef; }
+
+.ribbon__track {
+  display: inline-flex;
+  align-items: center;
+  gap: 44px;
+  width: max-content;
+  animation: marquee 34s linear infinite;
+}
+.ribbon:hover .ribbon__track { animation-play-state: paused; }
+
+.ribbon__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 44px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+.ribbon__gem { width: 15px; height: 15px; display: inline-block; opacity: 0.75; }
+.ribbon__gem svg { width: 100%; height: 100%; display: block; }

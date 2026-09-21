@@ -1,0 +1,67 @@
+.ft { background: #2b241d; color: #efe5da; padding-bottom: 26px; }
+.ft__rule {
+  height: 4px;
+  background: linear-gradient(90deg, var(--brown) 0%, var(--brown) 50%, var(--green) 50%, var(--green) 100%);
+}
+
+.ft__inner {
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr;
+  gap: clamp(32px, 6vw, 80px);
+  padding-block: clamp(48px, 7vw, 84px);
+}
+
+.ft__mark { display: block; width: 40px; height: 40px; color: var(--gold); }
+.ft__mark svg { width: 100%; height: 100%; }
+.ft__name {
+  margin-top: 16px;
+  font-size: 1.9rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+.ft__claim {
+  margin-top: 14px;
+  max-width: 42ch;
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: #cbbdae;
+}
+
+.ft__cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.ft__col h4 {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.ft__col ul { margin-top: 18px; display: grid; gap: 12px; }
+.ft__col a {
+  font-size: 0.94rem;
+  font-weight: 300;
+  color: #d8cbbd;
+  transition: color 0.3s ease, padding-left 0.4s cubic-bezier(0.2, 0.9, 0.24, 1);
+}
+.ft__col a:hover { color: #fff; padding-left: 8px; }
+
+.ft__base {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.76rem;
+  font-weight: 300;
+  color: #b0a294;
+}
+.ft__baseLinks { display: flex; gap: 22px; }
+.ft__baseLinks a:hover { color: #fff; }
+
+@media (max-width: 900px) {
+  .ft__inner { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .ft__cols { grid-template-columns: 1fr 1fr; }
+}

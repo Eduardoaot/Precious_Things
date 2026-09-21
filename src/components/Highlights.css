@@ -1,0 +1,176 @@
+.hl {
+  padding-block: clamp(64px, 9vw, 116px);
+  background:
+    radial-gradient(760px 420px at 88% 8%, rgba(244, 228, 189, 0.5) 0%, transparent 62%),
+    radial-gradient(700px 460px at 4% 94%, rgba(207, 231, 220, 0.5) 0%, transparent 66%),
+    var(--cream);
+}
+
+.hl__head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 5vw, 76px);
+  align-items: end;
+}
+.hl__eyebrow { color: var(--green-deep); }
+.hl__title {
+  margin-top: 18px;
+  font-size: clamp(2.6rem, 5.4vw, 4.6rem);
+}
+.hl__titleAccent { color: var(--brown); font-style: italic; font-weight: 300; }
+
+.hl__headRight .body-text { max-width: 52ch; }
+.hl__score {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brown-deep);
+}
+
+/* ---------- Fachada ---------- */
+.hl__store {
+  position: relative;
+  margin-top: clamp(40px, 5vw, 68px);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+  box-shadow: var(--shadow-m);
+}
+.hl__store img {
+  display: block;
+  width: 100%;
+  height: clamp(260px, 38vw, 480px);
+  object-fit: cover;
+  object-position: center 70%;
+}
+.hl__store figcaption {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 253, 250, 0.9);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brown-deep);
+}
+
+/* ---------- Tarjetas ---------- */
+.hl__grid {
+  margin-top: clamp(40px, 5vw, 68px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.hl__card {
+  position: relative;
+  padding: 34px 28px 38px;
+  border-radius: var(--radius-l);
+  background: var(--paper);
+  box-shadow: var(--shadow-s);
+  overflow: hidden;
+  isolation: isolate;
+}
+.hl__card::before {
+  content: '';
+  position: absolute;
+  inset: auto -30% -58% -30%;
+  height: 72%;
+  border-radius: 50%;
+  background: var(--card-tone);
+  z-index: -1;
+  transform: scale(0.72);
+  transition: transform 0.7s cubic-bezier(0.2, 0.9, 0.24, 1);
+}
+.hl__card:hover::before { transform: scale(1.18); }
+.hl__card:hover { box-shadow: var(--shadow-m); }
+
+.hl__card--rose { --card-tone: var(--rose); }
+.hl__card--mint { --card-tone: var(--mint); }
+.hl__card--lilac { --card-tone: var(--lilac); }
+.hl__card--sky { --card-tone: var(--sky); }
+
+.hl__icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--card-tone);
+  color: var(--brown-deep);
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.24, 1);
+}
+.hl__icon svg { width: 26px; height: 26px; }
+.hl__card:hover .hl__icon { transform: rotate(-10deg) scale(1.08); }
+
+.hl__cardTitle {
+  margin-top: 22px;
+  font-size: 1.36rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.hl__cardText {
+  margin-top: 12px;
+  font-size: 0.94rem;
+  font-weight: 300;
+  line-height: 1.66;
+  color: var(--ink-soft);
+}
+.hl__index {
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: var(--brown);
+  opacity: 0.6;
+}
+
+/* ---------- Cifras ---------- */
+.hl__figures {
+  margin-top: clamp(44px, 6vw, 80px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 36px clamp(22px, 4vw, 48px);
+  border-radius: var(--radius-l);
+  background: var(--paper);
+  box-shadow: var(--shadow-s);
+}
+.hl__figure { text-align: center; }
+.hl__figure strong {
+  display: block;
+  font-size: clamp(2rem, 3.4vw, 2.9rem);
+  font-weight: 400;
+  color: var(--brown-deep);
+}
+.hl__figureRule {
+  display: block;
+  width: 46px;
+  height: 2px;
+  margin: 14px auto;
+  background: linear-gradient(90deg, var(--brown), var(--green));
+}
+.hl__figure span {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 1080px) {
+  .hl__grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 820px) {
+  .hl__head { grid-template-columns: 1fr; }
+  .hl__figures { grid-template-columns: repeat(2, 1fr); gap: 32px 20px; }
+}
+@media (max-width: 560px) {
+  .hl__grid { grid-template-columns: 1fr; }
+}
