@@ -1,17 +1,46 @@
 import { Link, useParams } from 'react-router-dom';
 import Reveal from '../components/Reveal';
 import Avatar from '../components/Avatar';
-import TagDetail from '../components/TagDetail';
-import { TIPOS, antiguedad, fecha, getCliente, money } from '../data/clientes';
+import useOrdenesCliente from '../hooks/useOrdenesCliente';
+import { TIPOS } from '../data/clientes';
 import './Panel.css';
 import './ClienteDetalle.css';
 
 const ORDER_COLUMNS = [
   { key: 'folio', label: 'Folio', width: '1fr' },
   { key: 'fecha', label: 'Fecha', width: '1fr' },
+  { key: 'cantidad', label: 'Cantidad', width: '1fr' },
   { key: 'total', label: 'Total', width: '1fr' },
 ];
 const ORDER_GRID = ORDER_COLUMNS.map((column) => column.width).join(' ');
+
+const money = (value) => `$${Number(value).toLocaleString('es-MX')}`;
+
+// La base entrega las fechas como 'YYYY-MM-DD'.
+const fecha = (value) => {
+  const [anio, mes, dia] = value.split('-').map(Number);
+  return new Date(anio, mes - 1, dia).toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+function antiguedad(dias) {
+  if (dias === null) return 'Sin compras';
+  const meses = Math.floor(dias / 30.44);
+  const anios = Math.floor(meses / 12);
+  const resto = meses % 12;
+  if (anios === 0) return `${Math.max(meses, 1)} ${meses === 1 ? 'mes' : 'meses'}`;
+  const a = `${anios} ${anios === 1 ? 'año' : 'años'}`;
+  return resto ? `${a} ${resto} ${resto === 1 ? 'mes' : 'meses'}` : a;
+}
+
+// El nombre llega en una sola columna: "Juan Pérez" -> "Juan" + "Pérez".
+function partirNombre(nombre) {
+  const partes = nombre.trim().split(/\s+/);
+  return { nombre: partes[0], apellido: partes.length > 1 ? partes[partes.length - 1] : partes[0] };
+}
 
 function BackLink() {
   return (
@@ -22,40 +51,62 @@ function BackLink() {
   );
 }
 
+function Aviso({ titulo, texto }) {
+  return (
+    <main className="pn cd">
+      <div className="pn__rule" aria-hidden="true" />
+      <section className="shell cd__missing">
+        <BackLink />
+        <h1 className="display pn__title">{titulo}</h1>
+        <p className="body-text">{texto}</p>
+      </section>
+    </main>
+  );
+}
+
 export default function ClienteDetalle() {
   const { id } = useParams();
-  const cliente = getCliente(id);
+  const { cargando, error, datos } = useOrdenesCliente(id);
 
-  if (!cliente) {
+  if (cargando) {
+    return <Aviso titulo="Cargando cliente" texto="Consultando las órdenes en la base de datos." />;
+  }
+
+  if (error) {
     return (
-      <main className="pn cd">
-        <div className="pn__rule" aria-hidden="true" />
-        <section className="shell cd__missing">
-          <BackLink />
-          <h1 className="display pn__title">Cliente no encontrado</h1>
-          <p className="body-text">No existe un cliente con el identificador «{id}».</p>
-        </section>
-      </main>
+      <Aviso
+        titulo={error.status === 404 ? 'Sin órdenes en la vista' : 'No se pudo cargar el cliente'}
+        texto={
+          error.status === 404
+            ? `La vista vw_ordenes_por_usuario no devuelve órdenes para «${id}», así que no hay datos que mostrar.`
+            : `${error.message}. Revisa que la API esté levantada en el puerto 3001.`
+        }
+      />
     );
   }
 
-  const { stats, pedidos } = cliente;
+  const { cliente, ordenes, stats } = datos;
   const tipo = TIPOS[stats.tipo];
-  const mayor = pedidos.reduce((max, pedido) => (pedido.total > max.total ? pedido : max), pedidos[0]);
+  const partes = partirNombre(cliente.nombre);
 
   const actividad = [
     { label: 'Pedidos últimos 90 días', value: stats.pedidos90, tone: 'mint' },
     { label: 'Gasto últimos 90 días', value: money(stats.gasto90), tone: 'sky' },
     { label: 'Gasto histórico', value: money(stats.totalGastado), tone: 'gold' },
     { label: 'Pedidos históricos', value: stats.totalPedidos, tone: 'lilac' },
-    { label: 'Antigüedad', value: antiguedad(stats.clienteDesde), tone: 'peach' },
+    { label: 'Antigüedad', value: antiguedad(stats.diasComoCliente), tone: 'peach' },
     { label: 'Ticket promedio', value: money(stats.ticketPromedio), tone: 'rose' },
   ];
 
   const detalle = [
     { label: 'Última compra', value: stats.ultimaCompra ? fecha(stats.ultimaCompra) : 'Sin compras' },
-    { label: 'Días sin comprar', value: Number.isFinite(stats.diasSinComprar) ? stats.diasSinComprar : 'Sin compras' },
-    { label: 'Pedido más alto', value: mayor ? `${money(mayor.total)} (${mayor.folio})` : 'Sin datos' },
+    { label: 'Días sin comprar', value: stats.diasSinComprar ?? 'Sin compras' },
+    {
+      label: 'Pedido más alto',
+      value: stats.pedidoMasAlto
+        ? `${money(stats.pedidoMasAlto.total)} (${stats.pedidoMasAlto.numPedido})`
+        : 'Sin datos',
+    },
   ];
 
   return (
@@ -66,24 +117,20 @@ export default function ClienteDetalle() {
         <BackLink />
       </section>
 
-      {/* Datos generales */}
       <section className="shell">
         <Reveal variant="zoom" className="cd__profile">
-          <Avatar nombre={cliente.nombre} apellido={cliente.apellido} size={104} />
+          <Avatar nombre={partes.nombre} apellido={partes.apellido} size={104} />
           <div className="cd__identity">
             <span className="eyebrow pn__eyebrow">Vista general del cliente</span>
-            <h1 className="display cd__name">{cliente.nombreCompleto}</h1>
+            <h1 className="display cd__name">{cliente.nombre}</h1>
             <div className="cd__badges">
               <span className={`pn__type pn__type--${tipo.tone}`}>{tipo.label}</span>
-              {cliente.etiquetas.map((tag) => (
-                <TagDetail key={tag} tags={[tag]} />
-              ))}
+              <span className="pn__tag">Cliente #{cliente.id}</span>
             </div>
           </div>
         </Reveal>
       </section>
 
-      {/* KPIs */}
       <section className="shell cd__kpis" aria-label="Indicadores del cliente">
         {actividad.map((item, i) => (
           <Reveal key={item.label} variant="unfold" delay={i * 80} className={`cd__kpi cd__kpi--${item.tone}`}>
@@ -93,7 +140,6 @@ export default function ClienteDetalle() {
         ))}
       </section>
 
-      {/* Datos de sus pedidos */}
       <section className="shell cd__section">
         <Reveal variant="zoom" className="pn__panel cd__facts">
           <header className="pn__toolbar">
@@ -113,13 +159,12 @@ export default function ClienteDetalle() {
         </Reveal>
       </section>
 
-      {/* Órdenes */}
       <section className="shell cd__section" aria-label="Órdenes del cliente">
         <Reveal variant="zoom" className="pn__panel">
           <header className="pn__toolbar">
             <div>
               <h2 className="pn__tableTitle">Órdenes</h2>
-              <p className="pn__tableNote">{pedidos.length} pedidos, del más reciente al más antiguo</p>
+              <p className="pn__tableNote">{ordenes.length} pedidos, del más reciente al más antiguo</p>
             </div>
           </header>
 
@@ -130,19 +175,20 @@ export default function ClienteDetalle() {
               ))}
             </div>
             <div className="pn__tbody">
-              {pedidos.map((pedido, row) => (
+              {ordenes.map((orden, row) => (
                 <div
-                  key={pedido.folio}
+                  key={orden.idPedido}
                   role="row"
                   className="pn__tr cd__orders"
                   style={{ gridTemplateColumns: ORDER_GRID, animationDelay: `${row * 45}ms` }}
                 >
-                  <span role="cell" className="pn__td cd__folio">{pedido.folio}</span>
-                  <span role="cell" className="pn__td">{fecha(pedido.fecha)}</span>
-                  <span role="cell" className="pn__td pn__num">{money(pedido.total)}</span>
+                  <span role="cell" className="pn__td cd__folio">{orden.numPedido}</span>
+                  <span role="cell" className="pn__td">{fecha(orden.fecha)}</span>
+                  <span role="cell" className="pn__td pn__num">{orden.cantidad}</span>
+                  <span role="cell" className="pn__td pn__num">{money(orden.total)}</span>
                 </div>
               ))}
-              {pedidos.length === 0 && <p className="pn__none">Este cliente aún no tiene pedidos.</p>}
+              {ordenes.length === 0 && <p className="pn__none">Este cliente aún no tiene pedidos.</p>}
             </div>
           </div>
 
