@@ -1,5 +1,5 @@
 CREATE TABLE Clientes(
-	idUsuarios INT AUTO_INCREMENT PRIMARY KEY,
+	idCliente INT AUTO_INCREMENT PRIMARY KEY,
     Nombre VARCHAR(50) NOT NULL
 );
 
@@ -25,6 +25,6 @@ INSERT INTO clientes (nombre) VALUES
 ('Enrique Calvo'), ('Teresa Cabrera'), ('Ramón Vidal'), ('Carmen Ferrer'), ('Alfonso Ortiz'),
 ('Margarita Navarro'), ('Juan Carlos Crespo'), ('Isabel Pastor'), ('Francisco Javier Guijarro'), ('Marta Ramos');
 
-SELECT idUsuarios, nombre
+SELECT idCliente, nombre
 FROM clientes
 ORDER BY RAND();
