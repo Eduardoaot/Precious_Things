@@ -1,7 +1,7 @@
 
 
 
-INSERT INTO Usuarios (nombre) VALUES 
+INSERT INTO clientes  (nombre) VALUES 
 ('Juan Pérez'), ('María Gómez'), ('Carlos Rodríguez'), ('Ana Martínez'), ('Luis García'), 
 ('Sofía López'), ('Diego Hernández'), ('Laura González'), ('Andrés Sánchez'), ('Elena Díaz'),
 ('Pedro Torres'), ('Lucía Flores'), ('Javier Ramírez'), ('Valentina Cruz'), ('Manuel Gómez'),
@@ -25,8 +25,8 @@ INSERT INTO Usuarios (nombre) VALUES
 
 
 -- Muestra los 100 usuarios en un orden al azar
-SELECT id, nombre 
-FROM Usuarios 
+SELECT idCliente, nombre 
+FROM clientes 
 ORDER BY RAND();
 
 
