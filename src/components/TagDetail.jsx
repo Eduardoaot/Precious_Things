@@ -1,6 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getEtiqueta } from '../data/clientes';
 import './TagDetail.css';
 
 const WIDTH = 280;
@@ -11,7 +10,7 @@ const GAP = 8;
  * El detalle se monta en <body> porque las filas de la tabla recortan su contenido.
  * Con `tags` muestra varias etiquetas en el mismo detalle (el chip "+N").
  */
-export default function TagDetail({ tags, label, className = '' }) {
+export default function TagDetail({ tags, label, className = '', conteos }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
   const trigger = useRef(null);
@@ -51,7 +50,7 @@ export default function TagDetail({ tags, label, className = '' }) {
     };
   }, [open]);
 
-  const detalles = tags.map(getEtiqueta);
+  const detalles = tags.map((tag) => ({ nombre: tag, clientes: conteos?.[tag] }));
 
   return (
     <>
@@ -72,17 +71,18 @@ export default function TagDetail({ tags, label, className = '' }) {
             ref={panel}
             id={id}
             role="dialog"
-            aria-label={detalles.length === 1 ? `Etiqueta ${detalles[0].nombre}` : 'Más etiquetas'}
+            aria-label={detalles.length === 1 ? `Motivo: ${detalles[0].nombre}` : 'Más motivos'}
             className="tag-pop"
             style={{ width: WIDTH, left: pos?.left ?? -9999, top: pos?.top ?? -9999 }}
           >
             {detalles.map((tag) => (
               <div key={tag.nombre} className="tag-pop__item">
                 <strong className="tag-pop__name">{tag.nombre}</strong>
-                <p className="tag-pop__text">{tag.descripcion}</p>
-                <span className="tag-pop__count">
-                  {tag.clientes} {tag.clientes === 1 ? 'cliente tiene' : 'clientes tienen'} esta etiqueta
-                </span>
+                {tag.clientes !== undefined && (
+                  <span className="tag-pop__count">
+                    {tag.clientes} {tag.clientes === 1 ? 'cliente cumple' : 'clientes cumplen'} este motivo
+                  </span>
+                )}
               </div>
             ))}
           </div>,

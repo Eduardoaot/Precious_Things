@@ -1,7 +1,7 @@
 const BASE = import.meta.env.VITE_API_URL ?? '/api';
 
-export async function fetchOrdenesDeCliente(id, signal) {
-  const response = await fetch(`${BASE}/clientes/${encodeURIComponent(id)}/ordenes`, { signal });
+async function pedir(ruta, signal) {
+  const response = await fetch(`${BASE}${ruta}`, { signal });
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
@@ -12,3 +12,11 @@ export async function fetchOrdenesDeCliente(id, signal) {
 
   return data;
 }
+
+export const fetchCliente = (id, signal) => pedir(`/clientes/${encodeURIComponent(id)}`, signal);
+
+export const fetchClientes = (signal) => pedir('/clientes', signal);
+
+export const fetchKpis = (signal) => pedir('/kpis', signal);
+
+export const fetchEtiquetas = (signal) => pedir('/etiquetas', signal);

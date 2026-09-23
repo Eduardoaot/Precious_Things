@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import Reveal from '../components/Reveal';
 import Avatar from '../components/Avatar';
 import TagDetail from '../components/TagDetail';
-import { TIPOS, getClientes, money } from '../data/clientes';
+import useClientes from '../hooks/useClientes';
+import { TIPOS, money } from '../data/clientes';
 import './Panel.css';
 
 const KPIS = [
@@ -41,7 +42,7 @@ const COLUMNS = [
   { key: 'pedidos', label: 'Pedidos 90 días', width: '1.1fr', sortBy: 'pedidos90' },
   { key: 'gasto', label: 'Gasto 90 días', width: '1.1fr', sortBy: 'gasto90' },
   { key: 'tipo', label: 'Tipo de cliente', width: '1.1fr' },
-  { key: 'etiquetas', label: 'Etiquetas', width: '1.7fr' },
+  { key: 'etiquetas', label: 'Motivo', width: '2fr' },
   { key: 'vista', label: 'Vista general', width: '1fr' },
 ];
 
@@ -49,11 +50,17 @@ const FILTERS = [{ id: 'todos', label: 'Todos' }, ...Object.entries(TIPOS).map((
 
 const GRID = COLUMNS.map((column) => column.width).join(' ');
 const PAGE_SIZE = 8;
-const MAX_TAGS = 2;
+const MAX_TAGS = 1;
 
 // Cada clic en el encabezado: mayor a menor, menor a mayor, sin orden.
 const NEXT_DIR = { none: 'desc', desc: 'asc', asc: 'none' };
 const ARIA_SORT = { desc: 'descending', asc: 'ascending' };
+
+// El nombre llega en una sola columna: "Juan Pérez" -> "Juan" + "Pérez".
+function partirNombre(nombre) {
+  const partes = nombre.trim().split(/\s+/);
+  return { nombre: partes[0], apellido: partes.length > 1 ? partes[partes.length - 1] : partes[0] };
+}
 
 function SortIcon({ dir }) {
   return (
@@ -65,7 +72,7 @@ function SortIcon({ dir }) {
 }
 
 export default function Panel() {
-  const clientes = getClientes();
+  const { cargando, error, clientes, kpis, conteoEtiquetas } = useClientes();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('todos');
   const [page, setPage] = useState(0);
@@ -79,30 +86,22 @@ export default function Panel() {
     setPage(0);
   };
 
-  const conteo = useMemo(() => {
-    const base = { 'alto-valor': [], normal: [], riesgo: [] };
-    clientes.forEach((cliente) => base[cliente.stats.tipo].push(cliente));
-    return base;
-  }, [clientes]);
-
   const filtrados = useMemo(() => {
     const q = query.trim().toLowerCase();
     return clientes.filter((cliente) => {
-      if (filter !== 'todos' && cliente.stats.tipo !== filter) return false;
+      if (filter !== 'todos' && cliente.tipo !== filter) return false;
       if (!q) return true;
-      return [cliente.nombreCompleto, cliente.correo, ...cliente.etiquetas].some((text) =>
-        text.toLowerCase().includes(q)
-      );
+      return [cliente.nombre, ...cliente.etiquetas].some((text) => text.toLowerCase().includes(q));
     });
   }, [clientes, query, filter]);
 
   const ordenados = useMemo(() => {
     if (!sort.by) return filtrados;
     const factor = sort.dir === 'asc' ? 1 : -1;
-    return [...filtrados].sort((a, b) => (a.stats[sort.by] - b.stats[sort.by]) * factor);
+    return [...filtrados].sort((a, b) => (a[sort.by] - b[sort.by]) * factor);
   }, [filtrados, sort]);
 
-  const pages = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil(ordenados.length / PAGE_SIZE));
   const current = Math.min(page, pages - 1);
   const visibles = ordenados.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
 
@@ -121,37 +120,39 @@ export default function Panel() {
         </Reveal>
 
         <Reveal variant="slide-right" delay={120} className="pn__status">
-          <span className="pn__statusDot" aria-hidden="true" />
+          <span className={`pn__statusDot ${error ? 'pn__statusDot--error' : ''}`} aria-hidden="true" />
           <span className="pn__statusText">
-            <strong>Mostrando datos de ejemplo</strong>
-            <em>Se reemplazarán por los registros reales al conectar la base</em>
+            <strong>{error ? 'Sin conexión con la base' : 'Datos de bd_laquinta'}</strong>
+            <em>
+              {error
+                ? 'Levanta la API en el puerto 3001'
+                : `${clientes.length} clientes registrados`}
+            </em>
           </span>
         </Reveal>
       </section>
 
       <section className="shell pn__kpis" aria-label="Indicadores por tipo de cliente">
         {KPIS.map((kpi, i) => {
-          const grupo = conteo[kpi.id];
-          const share = Math.round((grupo.length / clientes.length) * 100);
-          const gasto = grupo.reduce((sum, cliente) => sum + cliente.stats.gasto90, 0);
+          const dato = kpis?.[kpi.id];
           return (
             <Reveal key={kpi.id} variant="unfold" delay={i * 120} className={`kpi kpi--${kpi.tone}`}>
               <div className="kpi__top">
                 <span className="kpi__icon">{kpi.icon}</span>
-                <span className="kpi__chip">{share}% del total</span>
+                <span className="kpi__chip">{dato ? `${dato.porcentaje}% del total` : '—'}</span>
               </div>
 
               <h2 className="kpi__label">{kpi.label}</h2>
               <p className="kpi__hint">{kpi.hint}</p>
 
               <div className="kpi__value">
-                <strong className="kpi__number">{grupo.length}</strong>
+                <strong className="kpi__number">{dato ? dato.clientes : '—'}</strong>
                 <span className="kpi__unit">clientes</span>
               </div>
 
               <div className="kpi__foot">
-                <span>Gasto 90 días: {money(gasto)}</span>
-                <span className="kpi__bar"><i style={{ width: `${share}%` }} /></span>
+                <span>Gasto 90 días: {dato ? money(dato.gasto90) : '—'}</span>
+                <span className="kpi__bar"><i style={{ width: `${dato?.porcentaje ?? 0}%` }} /></span>
               </div>
             </Reveal>
           );
@@ -163,7 +164,7 @@ export default function Panel() {
           <header className="pn__toolbar">
             <div>
               <h2 className="pn__tableTitle">Listado de clientes</h2>
-              <p className="pn__tableNote">{filtrados.length} de {clientes.length} clientes</p>
+              <p className="pn__tableNote">{ordenados.length} de {clientes.length} clientes</p>
             </div>
             <div className="pn__tools">
               <span className="pn__search">
@@ -220,7 +221,8 @@ export default function Panel() {
 
             <div className="pn__tbody">
               {visibles.map((cliente, row) => {
-                const tipo = TIPOS[cliente.stats.tipo];
+                const tipo = TIPOS[cliente.tipo] ?? { label: cliente.tipo, tone: 'sky' };
+                const partes = partirNombre(cliente.nombre);
                 const extra = cliente.etiquetas.length - MAX_TAGS;
                 return (
                   <div
@@ -230,28 +232,30 @@ export default function Panel() {
                     style={{ gridTemplateColumns: GRID, animationDelay: `${row * 65}ms` }}
                   >
                     <span role="cell" className="pn__td pn__td--who">
-                      <Avatar nombre={cliente.nombre} apellido={cliente.apellido} />
+                      <Avatar nombre={partes.nombre} apellido={partes.apellido} />
                       <span className="pn__who">
-                        <strong>{cliente.nombreCompleto}</strong>
-                        <em>{cliente.correo}</em>
+                        <strong>{cliente.nombre}</strong>
+                        <em>Cliente #{cliente.id}</em>
                       </span>
                     </span>
-                    <span role="cell" className="pn__td pn__num">{cliente.stats.pedidos90}</span>
-                    <span role="cell" className="pn__td pn__num">{money(cliente.stats.gasto90)}</span>
+                    <span role="cell" className="pn__td pn__num">{cliente.pedidos90}</span>
+                    <span role="cell" className="pn__td pn__num">{money(cliente.gasto90)}</span>
                     <span role="cell" className="pn__td">
                       <span className={`pn__type pn__type--${tipo.tone}`}>{tipo.label}</span>
                     </span>
                     <span role="cell" className="pn__td pn__tags">
                       {cliente.etiquetas.slice(0, MAX_TAGS).map((tag) => (
-                        <TagDetail key={tag} tags={[tag]} />
+                        <TagDetail key={tag} tags={[tag]} conteos={conteoEtiquetas} />
                       ))}
                       {extra > 0 && (
                         <TagDetail
                           tags={cliente.etiquetas.slice(MAX_TAGS)}
                           label={`+${extra}`}
                           className="pn__tag--more"
+                          conteos={conteoEtiquetas}
                         />
                       )}
+                      {cliente.etiquetas.length === 0 && <span className="pn__sinTags">—</span>}
                     </span>
                     <span role="cell" className="pn__td">
                       <Link to={`/panel/clientes/${cliente.id}`} className="pn__view">
@@ -262,7 +266,10 @@ export default function Panel() {
                   </div>
                 );
               })}
-              {visibles.length === 0 && (
+
+              {cargando && <p className="pn__none">Consultando la base de datos…</p>}
+              {error && <p className="pn__none">{error.message}</p>}
+              {!cargando && !error && visibles.length === 0 && (
                 <p className="pn__none">No hay clientes que coincidan con la búsqueda.</p>
               )}
             </div>

@@ -31,6 +31,21 @@
 .cd__profile .avatar { box-shadow: 0 0 0 6px var(--cream-deep); }
 .cd__name { margin-top: 10px; font-size: clamp(2rem, 3.8vw, 3rem); }
 .cd__badges { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cd__sinTags { font-size: 0.8rem; font-weight: 300; color: var(--ink-soft); }
+
+.cd__flags {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cd__flags li {
+  padding: 5px 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(138, 106, 75, 0.28);
+  font-size: 0.72rem;
+  color: var(--brown-deep);
+}
 
 .cd__factGrid dt {
   font-size: 0.62rem;

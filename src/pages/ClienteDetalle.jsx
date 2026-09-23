@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import Reveal from '../components/Reveal';
 import Avatar from '../components/Avatar';
+import TagDetail from '../components/TagDetail';
 import useOrdenesCliente from '../hooks/useOrdenesCliente';
 import { TIPOS } from '../data/clientes';
 import './Panel.css';
@@ -25,16 +26,6 @@ const fecha = (value) => {
     year: 'numeric',
   });
 };
-
-function antiguedad(dias) {
-  if (dias === null) return 'Sin compras';
-  const meses = Math.floor(dias / 30.44);
-  const anios = Math.floor(meses / 12);
-  const resto = meses % 12;
-  if (anios === 0) return `${Math.max(meses, 1)} ${meses === 1 ? 'mes' : 'meses'}`;
-  const a = `${anios} ${anios === 1 ? 'año' : 'años'}`;
-  return resto ? `${a} ${resto} ${resto === 1 ? 'mes' : 'meses'}` : a;
-}
 
 // El nombre llega en una sola columna: "Juan Pérez" -> "Juan" + "Pérez".
 function partirNombre(nombre) {
@@ -66,7 +57,7 @@ function Aviso({ titulo, texto }) {
 
 export default function ClienteDetalle() {
   const { id } = useParams();
-  const { cargando, error, datos } = useOrdenesCliente(id);
+  const { cargando, error, datos, conteoEtiquetas } = useOrdenesCliente(id);
 
   if (cargando) {
     return <Aviso titulo="Cargando cliente" texto="Consultando las órdenes en la base de datos." />;
@@ -75,10 +66,10 @@ export default function ClienteDetalle() {
   if (error) {
     return (
       <Aviso
-        titulo={error.status === 404 ? 'Sin órdenes en la vista' : 'No se pudo cargar el cliente'}
+        titulo={error.status === 404 ? 'Cliente no encontrado' : 'No se pudo cargar el cliente'}
         texto={
           error.status === 404
-            ? `La vista vw_ordenes_por_usuario no devuelve órdenes para «${id}», así que no hay datos que mostrar.`
+            ? `Las vistas no devuelven ningún cliente con el identificador «${id}».`
             : `${error.message}. Revisa que la API esté levantada en el puerto 3001.`
         }
       />
@@ -86,15 +77,16 @@ export default function ClienteDetalle() {
   }
 
   const { cliente, ordenes, stats } = datos;
-  const tipo = TIPOS[stats.tipo];
+  const tipo = TIPOS[cliente.tipo] ?? { label: cliente.tipo, tone: 'sky' };
   const partes = partirNombre(cliente.nombre);
+
 
   const actividad = [
     { label: 'Pedidos últimos 90 días', value: stats.pedidos90, tone: 'mint' },
     { label: 'Gasto últimos 90 días', value: money(stats.gasto90), tone: 'sky' },
     { label: 'Gasto histórico', value: money(stats.totalGastado), tone: 'gold' },
     { label: 'Pedidos históricos', value: stats.totalPedidos, tone: 'lilac' },
-    { label: 'Antigüedad', value: antiguedad(stats.diasComoCliente), tone: 'peach' },
+    { label: 'Antigüedad', value: stats.antiguedad, tone: 'peach' },
     { label: 'Ticket promedio', value: money(stats.ticketPromedio), tone: 'rose' },
   ];
 
@@ -126,6 +118,10 @@ export default function ClienteDetalle() {
             <div className="cd__badges">
               <span className={`pn__type pn__type--${tipo.tone}`}>{tipo.label}</span>
               <span className="pn__tag">Cliente #{cliente.id}</span>
+              {cliente.etiquetas.map((etiqueta) => (
+                <TagDetail key={etiqueta} tags={[etiqueta]} conteos={conteoEtiquetas} />
+              ))}
+              {cliente.etiquetas.length === 0 && <span className="cd__sinTags">Sin motivos destacados</span>}
             </div>
           </div>
         </Reveal>
